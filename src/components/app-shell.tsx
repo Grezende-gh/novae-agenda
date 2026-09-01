@@ -13,13 +13,13 @@ import {
 import { useStore, type Toast } from "@/store/store";
 import { api, ApiError, formatPhoneForWhatsApp } from "@/lib/api-client";
 import { avatarColor, formatCurrency, initials, PAYMENT_LABELS, STATUS_LABELS } from "@/lib/client-utils";
+import { applyTheme, getStoredTheme, type Theme } from "@/lib/theme";
 import type {
   AppointmentDTO, AppointmentStatus, ClientDTO, EmployeeDTO, PaymentMethod, ServiceCategoryDTO, ServiceDTO,
 } from "@/shared/types";
 
 type ViewKey = "dashboard" | "agenda" | "clientes" | "servicos" | "equipe" | "financeiro" | "configuracoes";
 type CalendarMode = "day" | "week" | "month";
-type Theme = "light" | "dark";
 
 const navItems: Array<{ id: ViewKey; label: string; icon: LucideIcon }> = [
   { id: "dashboard", label: "Início", icon: Home },
@@ -374,9 +374,23 @@ function FinancialPage() {
 function SettingsPage({ theme, setTheme }: { theme: Theme; setTheme: (t: Theme) => void }) {
   const { session, notify } = useStore();
   const company = session?.company;
+  const defaultPhone = "(21) 99999-9999";
+  const formatPhone = (value: string) => {
+    const digits = value.replace(/\D/g, "").slice(0, 11);
+    if (digits.length <= 2) return digits ? `(${digits}` : "";
+    if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+  };
+  const [activeTab, setActiveTab] = useState<"empresa" | "funcionamento" | "ajuda">(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("agenda-settings-tab");
+      return (saved as "empresa" | "funcionamento" | "ajuda") || "empresa";
+    }
+    return "empresa";
+  });
   const [name, setName] = useState(company?.name ?? "");
-  const [phone, setPhone] = useState(company?.phone ?? "");
-  const [whatsapp, setWhatsapp] = useState(company?.whatsapp ?? "");
+  const [phone, setPhone] = useState(company?.phone ?? defaultPhone);
+  const [whatsapp, setWhatsapp] = useState(company?.whatsapp ?? defaultPhone);
   const [email, setEmail] = useState(company?.email ?? "");
   const [address, setAddress] = useState(company?.address ?? "");
   const [instagram, setInstagram] = useState(company?.instagram ?? "");
@@ -394,36 +408,129 @@ function SettingsPage({ theme, setTheme }: { theme: Theme; setTheme: (t: Theme) 
     }
   };
 
+  useEffect(() => {
+    localStorage.setItem("agenda-settings-tab", activeTab);
+  }, [activeTab]);
+
   return (
     <div className="page-content settings-page">
       <div className="page-intro"><div><p className="eyebrow">Preferências do espaço</p><h1>Configurações</h1><p className="intro-copy">Personalize a experiência do seu estabelecimento.</p></div><Button onClick={save}>{saving ? "Salvando..." : <><Check size={16} /> Salvar alterações</>}</Button></div>
       <div className="settings-layout">
-        <aside className="settings-nav"><button className="active"><Settings2 size={16} /> Empresa</button><button><Clock3 size={16} /> Funcionamento</button><button><CircleHelp size={16} /> Ajuda</button></aside>
+        <aside className="settings-nav">
+          <button className={activeTab === "empresa" ? "active" : ""} onClick={() => setActiveTab("empresa")}><Settings2 size={16} /> Empresa</button>
+          <button className={activeTab === "funcionamento" ? "active" : ""} onClick={() => setActiveTab("funcionamento")}><Clock3 size={16} /> Funcionamento</button>
+          <button className={activeTab === "ajuda" ? "active" : ""} onClick={() => setActiveTab("ajuda")}><CircleHelp size={16} /> Ajuda</button>
+        </aside>
+
         <div className="settings-sections">
-          <section className="settings-section">
-            <SectionHeading title="Informações da empresa" description="Esses dados aparecem nos seus agendamentos e comunicações." />
-            <div className="settings-form">
-              <Field label="Nome da empresa"><input className="input" value={name} onChange={(e) => setName(e.target.value)} /></Field>
-              <Field label="Telefone"><input className="input" value={phone} onChange={(e) => setPhone(e.target.value)} /></Field>
-              <Field label="WhatsApp"><input className="input" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} /></Field>
-              <Field label="E-mail"><input className="input" value={email} onChange={(e) => setEmail(e.target.value)} /></Field>
-              <Field label="Endereço"><div className="input-with-icon"><MapPin size={16} /><input className="input" value={address} onChange={(e) => setAddress(e.target.value)} /></div></Field>
-              <Field label="Instagram"><div className="input-with-icon"><span className="at-symbol">@</span><input className="input" value={instagram} onChange={(e) => setInstagram(e.target.value)} /></div></Field>
-            </div>
-          </section>
+          {activeTab === "empresa" && (
+            <>
+              <section className="settings-section">
+                <SectionHeading title="Informações da empresa" description="Esses dados aparecem nos seus agendamentos e comunicações." />
+                <div className="settings-form">
+                  <Field label="Nome da empresa"><input className="input" value={name} onChange={(e) => setName(e.target.value)} /></Field>
+                  <Field label="Telefone"><input className="input" value={phone} onChange={(e) => setPhone(formatPhone(e.target.value))} placeholder="(21) 99999-9999" inputMode="numeric" pattern="[0-9]*" /></Field>
+                  <Field label="WhatsApp"><input className="input" value={whatsapp} onChange={(e) => setWhatsapp(formatPhone(e.target.value))} placeholder="(21) 99999-9999" inputMode="numeric" pattern="[0-9]*" /></Field>
+                  <Field label="E-mail">
+                    <input className="input" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="seuemail@dominio.com" />
+                  </Field>
+                  <Field label="Endereço"><div className="input-with-icon"><MapPin size={16} /><input className="input" value={address} onChange={(e) => setAddress(e.target.value)} /></div></Field>
+                  <Field label="Instagram"><div className="input-with-icon"><span className="at-symbol">@</span><input className="input" value={instagram} onChange={(e) => setInstagram(e.target.value)} /></div></Field>
+                </div>
+              </section>
 
-          <section className="settings-section">
-            <SectionHeading title="Aparência" description="A Agenda se adapta ao seu jeito de trabalhar." />
-            <div className="theme-options">
-              <button className={theme === "light" ? "theme-option active" : "theme-option"} onClick={() => setTheme("light")}><span className="theme-preview light-preview"><Sun size={17} /></span><strong>Claro</strong><small>Leve e arejado</small>{theme === "light" && <CheckCircle size={17} />}</button>
-              <button className={theme === "dark" ? "theme-option active" : "theme-option"} onClick={() => setTheme("dark")}><span className="theme-preview dark-preview"><Moon size={17} /></span><strong>Escuro</strong><small>Confortável à noite</small>{theme === "dark" && <CheckCircle size={17} />}</button>
-            </div>
-          </section>
+              <section className="settings-section">
+                <SectionHeading title="Aparência" description="A Agenda se adapta ao seu jeito de trabalhar." />
+                <div className="theme-options">
+                  <button className={theme === "light" ? "theme-option active" : "theme-option"} onClick={() => setTheme("light")}>
+                    <span className="theme-preview light-preview"><Sun size={17} /></span>
+                    <span className="theme-copy"><strong>Claro</strong><small>Leve e arejado</small></span>
+                    {theme === "light" && <CheckCircle size={17} className="theme-check" />}
+                  </button>
+                  <button className={theme === "dark" ? "theme-option active" : "theme-option"} onClick={() => setTheme("dark")}>
+                    <span className="theme-preview dark-preview"><Moon size={17} /></span>
+                    <span className="theme-copy"><strong>Escuro</strong><small>Confortável à noite</small></span>
+                    {theme === "dark" && <CheckCircle size={17} className="theme-check" />}
+                  </button>
+                </div>
+              </section>
 
-          <section className="settings-section">
-            <SectionHeading title="Sessão" />
-            <div className="profile-note"><UserRound size={14} /><span>Você está conectado(a) como <strong>{session?.name}</strong> ({session?.role === "owner" ? "Proprietário" : session?.role === "admin" ? "Administrador" : "Profissional"}).</span></div>
-          </section>
+              <section className="settings-section">
+                <SectionHeading title="Sessão" />
+                <div className="profile-note"><UserRound size={14} /><span>Você está conectado(a) como <strong>{session?.name}</strong> ({session?.role === "owner" ? "Proprietário" : session?.role === "admin" ? "Administrador" : "Profissional"}).</span></div>
+              </section>
+            </>
+          )}
+
+          {activeTab === "funcionamento" && (
+            <section className="settings-section">
+              <SectionHeading title="Funcionamento" description="Configure os horários e regras do seu estabelecimento." />
+              <div className="settings-form">
+                <div className="settings-tab-list">
+                  <button className="settings-tab active">Horários</button>
+                  <button className="settings-tab">Pausas</button>
+                  <button className="settings-tab">Disponibilidade</button>
+                </div>
+
+                <div className="settings-feature-grid">
+                  <div className="settings-feature-card">
+                    <span className="feature-pill">Horário de abertura</span>
+                    <strong>08:00</strong>
+                    <small>Primeira entrada do dia</small>
+                  </div>
+                  <div className="settings-feature-card">
+                    <span className="feature-pill">Horário de fechamento</span>
+                    <strong>18:00</strong>
+                    <small>Últimos atendimentos</small>
+                  </div>
+                  <div className="settings-feature-card">
+                    <span className="feature-pill">Dias ativos</span>
+                    <strong>Seg - Sáb</strong>
+                    <small>Funcionamento padrão</small>
+                  </div>
+                </div>
+
+                <Field label="Abertura"><input className="input" value="08:00" readOnly /></Field>
+                <Field label="Fechamento"><input className="input" value="18:00" readOnly /></Field>
+                <Field label="Dias de atendimento"><input className="input" value="Segunda a Sábado" readOnly /></Field>
+              </div>
+            </section>
+          )}
+
+          {activeTab === "ajuda" && (
+            <section className="settings-section">
+              <SectionHeading title="Ajuda" description="Acesse informações rápidas e suporte do sistema." />
+              <div className="settings-form">
+                <div className="settings-tab-list">
+                  <button className="settings-tab active">Perguntas</button>
+                  <button className="settings-tab">Contato</button>
+                  <button className="settings-tab">Guia</button>
+                </div>
+
+                <div className="settings-feature-grid">
+                  <div className="settings-feature-card">
+                    <span className="feature-pill">Pergunta rápida</span>
+                    <strong>Como criar um agendamento?</strong>
+                    <small>Fluxo inicial</small>
+                  </div>
+                  <div className="settings-feature-card">
+                    <span className="feature-pill">Suporte</span>
+                    <strong>Chat ou e-mail</strong>
+                    <small>Resposta rápida</small>
+                  </div>
+                  <div className="settings-feature-card">
+                    <span className="feature-pill">Guia</span>
+                    <strong>Serviços + equipe</strong>
+                    <small>Configuração inicial</small>
+                  </div>
+                </div>
+
+                <Field label="Dúvida frequente"><input className="input" value="Como criar um agendamento?" readOnly /></Field>
+                <Field label="Suporte"><input className="input" value="Atendimento via chat ou e-mail" readOnly /></Field>
+                <Field label="Guia rápido"><input className="input" value="Cadastre serviços, equipe e horários" readOnly /></Field>
+              </div>
+            </section>
+          )}
         </div>
       </div>
     </div>
@@ -757,12 +864,57 @@ function AppointmentDetailModal({ appointment, onClose }: { appointment: Appoint
   );
 }
 
+/* ---------- Profile drawer ---------- */
+function ProfileDrawer({ onClose, session, onSettings, onLogout }: { onClose: () => void; session: any; onSettings: () => void; onLogout: () => void }) {
+  return (
+    <div className="drawer-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <aside className="profile-drawer">
+        <div className="drawer-header"><span className="eyebrow">Sua conta</span><IconButton label="Fechar perfil" onClick={onClose}><X size={19} /></IconButton></div>
+        
+        <div className="profile-hero">
+          <span className="profile-avatar-large">{initials(session?.name ?? "U")}</span>
+          <h2>{session?.name}</h2>
+          <p className="profile-role">{session?.role === "owner" ? "Proprietário" : session?.role === "admin" ? "Administrador" : "Profissional"}</p>
+          <p className="profile-company">{session?.company.name}</p>
+        </div>
+
+        <div className="profile-info">
+          <div className="info-item">
+            <span className="info-label">E-mail</span>
+            <strong>{session?.email || "não informado"}</strong>
+          </div>
+          <div className="info-item">
+            <span className="info-label">Acesso desde</span>
+            <strong>{new Date(session?.createdAt || Date.now()).toLocaleDateString("pt-BR")}</strong>
+          </div>
+        </div>
+
+        <div className="profile-actions-drawer">
+          <Button onClick={() => { onSettings(); onClose(); }} className="full-width"><Settings2 size={16} /> Configurações da conta</Button>
+          <Button variant="secondary" onClick={() => { onLogout(); onClose(); }} className="full-width"><LogOut size={16} /> Sair da conta</Button>
+        </div>
+
+        <div className="profile-footer">
+          <span className="profile-version">agenda. v1.0</span>
+        </div>
+      </aside>
+    </div>
+  );
+}
+
 /* ---------- Main shell ---------- */
 export function AppShell() {
   const { session, appointments, employees, blocks, logout, toasts, dismissToast } = useStore();
-  const [view, setView] = useState<ViewKey>("dashboard");
-  const [theme, setTheme] = useState<Theme>("light");
+  const [view, setView] = useState<ViewKey>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("agenda-view");
+      return (saved as ViewKey) || "dashboard";
+    }
+    return "dashboard";
+  });
+  const [theme, setTheme] = useState<Theme>(() => getStoredTheme());
   const [collapsed, setCollapsed] = useState(false);
+  const [profileDrawerOpen, setProfileDrawerOpen] = useState(false);
   const [mobileMenu, setMobileMenu] = useState(false);
   const [selectedDate, setSelectedDate] = useState(todayKey());
   const [calMode, setCalMode] = useState<CalendarMode>("day");
@@ -777,7 +929,13 @@ export function AppShell() {
   const [detailAppointment, setDetailAppointment] = useState<AppointmentDTO | null>(null);
   const [clientDrawer, setClientDrawer] = useState<ClientDTO | null>(null);
 
-  useEffect(() => { document.documentElement.dataset.theme = theme; }, [theme]);
+  useEffect(() => {
+    applyTheme(theme);
+  }, [theme]);
+
+  useEffect(() => {
+    localStorage.setItem("agenda-view", view);
+  }, [view]);
 
   const navigate = (v: ViewKey) => { setView(v); setMobileMenu(false); };
 
@@ -835,7 +993,7 @@ export function AppShell() {
         <div className="workspace-switcher"><span className="workspace-logo">{initials(session?.company.name ?? "A")}</span>{!collapsed && <div><strong>{session?.company.name}</strong><small>Unidade principal</small></div>}</div>
         <nav className="sidebar-nav">{navItems.map(({ id, label, icon: Icon }) => <button key={id} className={view === id ? "active" : ""} onClick={() => navigate(id)}><Icon size={18} /><span>{label}</span>{id === "agenda" && !collapsed && <em>{appointments.filter((a) => a.date === todayKey() && !["cancelled", "no_show"].includes(a.status)).length}</em>}</button>)}</nav>
         <div className="sidebar-bottom">
-          <button className="profile-nav" onClick={() => navigate("configuracoes")}><span className="profile-avatar">{initials(session?.name ?? "U")}</span>{!collapsed && <span><strong>{session?.name}</strong><small>{session?.role === "owner" ? "Proprietário" : session?.role === "admin" ? "Administrador" : "Profissional"}</small></span>}<MoreHorizontal size={17} /></button>
+          <button className="profile-nav" onClick={() => setProfileDrawerOpen(true)}><span className="profile-avatar">{initials(session?.name ?? "U")}</span>{!collapsed && <span><strong>{session?.name}</strong><small>{session?.role === "owner" ? "Proprietário" : session?.role === "admin" ? "Administrador" : "Profissional"}</small></span>}<MoreHorizontal size={17} /></button>
           <button className="logout-button" onClick={logout}><LogOut size={17} /><span>{!collapsed ? "Sair da conta" : "Sair"}</span></button>
         </div>
       </aside>
@@ -845,9 +1003,13 @@ export function AppShell() {
           <div className="topbar-left"><IconButton label="Menu" className="mobile-menu-button" onClick={() => setMobileMenu((v) => !v)}><Menu size={20} /></IconButton><div className="breadcrumb"><span>{session?.company.name}</span><ChevronRight size={14} /><strong>{pageTitles[view].title}</strong></div></div>
           <div className="topbar-actions">
             <div className="global-search"><Search size={17} /><input value={globalSearch} onChange={(e) => setGlobalSearch(e.target.value)} placeholder="Buscar na Agenda" onKeyDown={(e) => { if (e.key === "Enter" && globalSearch) navigate("clientes"); }} /></div>
-            <IconButton label="Alternar tema" onClick={() => setTheme((t) => (t === "light" ? "dark" : "light"))}>{theme === "light" ? <Moon size={18} /> : <Sun size={18} />}</IconButton>
+            <IconButton label="Alternar tema" onClick={() => setTheme((t) => {
+              const next = t === "light" ? "dark" : "light";
+              applyTheme(next);
+              return next;
+            })}>{theme === "light" ? <Moon size={18} /> : <Sun size={18} />}</IconButton>
             <button className="notification-button" aria-label="Notificações"><Bell size={18} />{appointments.some((a) => a.date === todayKey() && a.status === "confirmed") && <i />}</button>
-            <span className="topbar-avatar">{initials(session?.name ?? "U")}</span>
+            <button className="topbar-profile-button" onClick={() => setProfileDrawerOpen(true)} aria-label="Perfil"><span className="topbar-avatar">{initials(session?.name ?? "U")}</span></button>
           </div>
         </header>
         {render()}
@@ -864,6 +1026,7 @@ export function AppShell() {
       {blockOpen && <BlockModal onClose={() => setBlockOpen(false)} defaultDate={selectedDate} />}
       {detailAppointment && <AppointmentDetailModal appointment={detailAppointment} onClose={() => setDetailAppointment(null)} />}
       {clientDrawer && <ClientDrawer clientId={clientDrawer.id} onClose={() => setClientDrawer(null)} onNewAppointment={(client) => { setClientDrawer(null); setSelectedDate(todayKey()); setNewAppointmentOpen(true); }} />}
+      {profileDrawerOpen && <ProfileDrawer onClose={() => setProfileDrawerOpen(false)} session={session} onSettings={() => navigate("configuracoes")} onLogout={logout} />}
 
       <Toasts toasts={toasts} onDismiss={dismissToast} />
     </div>
