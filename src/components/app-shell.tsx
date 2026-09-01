@@ -374,12 +374,12 @@ function FinancialPage() {
 function SettingsPage({ theme, setTheme }: { theme: Theme; setTheme: (t: Theme) => void }) {
   const { session, notify } = useStore();
   const company = session?.company;
-  const defaultPhone = "(21) 99999-9999";
+  const defaultPhone = "(21)99999-9999";
   const formatPhone = (value: string) => {
     const digits = value.replace(/\D/g, "").slice(0, 11);
     if (digits.length <= 2) return digits ? `(${digits}` : "";
-    if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
-    return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+    if (digits.length <= 7) return `(${digits.slice(0, 2)})${digits.slice(2)}`;
+    return `(${digits.slice(0, 2)})${digits.slice(2, 7)}-${digits.slice(7)}`;
   };
   const [activeTab, setActiveTab] = useState<"empresa" | "funcionamento" | "ajuda">(() => {
     if (typeof window !== "undefined") {
@@ -429,8 +429,8 @@ function SettingsPage({ theme, setTheme }: { theme: Theme; setTheme: (t: Theme) 
                 <SectionHeading title="Informações da empresa" description="Esses dados aparecem nos seus agendamentos e comunicações." />
                 <div className="settings-form">
                   <Field label="Nome da empresa"><input className="input" value={name} onChange={(e) => setName(e.target.value)} /></Field>
-                  <Field label="Telefone"><input className="input" value={phone} onChange={(e) => setPhone(formatPhone(e.target.value))} placeholder="(21) 99999-9999" inputMode="numeric" pattern="[0-9]*" /></Field>
-                  <Field label="WhatsApp"><input className="input" value={whatsapp} onChange={(e) => setWhatsapp(formatPhone(e.target.value))} placeholder="(21) 99999-9999" inputMode="numeric" pattern="[0-9]*" /></Field>
+                  <Field label="Telefone"><input className="input" value={phone} onChange={(e) => setPhone(formatPhone(e.target.value))} placeholder="(21)99999-9999" inputMode="numeric" pattern="[0-9]*" /></Field>
+                  <Field label="WhatsApp"><input className="input" value={whatsapp} onChange={(e) => setWhatsapp(formatPhone(e.target.value))} placeholder="(21)99999-9999" inputMode="numeric" pattern="[0-9]*" /></Field>
                   <Field label="E-mail">
                     <input className="input" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="seuemail@dominio.com" />
                   </Field>
@@ -615,11 +615,29 @@ function NewClientModal({ onClose }: { onClose: () => void }) {
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
+  const formatPhone = (value: string) => {
+    const digits = value.replace(/\D/g, "").slice(0, 11);
+    if (digits.length <= 2) return digits ? `(${digits}` : "";
+    if (digits.length <= 7) return `(${digits.slice(0, 2)})${digits.slice(2)}`;
+    return `(${digits.slice(0, 2)})${digits.slice(2, 7)}-${digits.slice(7)}`;
+  };
+
+  const isValidPhone = (value: string) => {
+    const digits = value.replace(/\D/g, "");
+    return digits.length >= 10 && digits.length <= 11;
+  };
+
   const submit = async (event: FormEvent) => {
     event.preventDefault();
+    const nextPhone = formatPhone(phone);
+    if (!isValidPhone(nextPhone)) {
+      notify("Digite um telefone celular válido no formato (21)99999-9999.", "error");
+      return;
+    }
+
     setSubmitting(true);
     try {
-      await createClient({ name, phone, email: email || undefined, notes: notes || undefined });
+      await createClient({ name, phone: nextPhone, email: email || undefined, notes: notes || undefined });
       notify("Cliente cadastrado com sucesso.");
       onClose();
     } catch (e) {
@@ -631,11 +649,11 @@ function NewClientModal({ onClose }: { onClose: () => void }) {
 
   return (
     <Modal title="Novo cliente" eyebrow="Adicionar à sua base" onClose={onClose}>
-      <form onSubmit={submit}>
+      <form onSubmit={submit} noValidate>
         <div className="modal-form-grid single">
           <Field label="Nome completo"><input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex.: Fernanda Almeida" required minLength={2} /></Field>
-          <Field label="Telefone"><input className="input" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="(11) 99999-9999" required minLength={8} /></Field>
-          <Field label="E-mail (opcional)"><input className="input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="cliente@email.com" /></Field>
+          <Field label="Telefone"><input className="input" value={phone} onChange={(e) => setPhone(formatPhone(e.target.value))} placeholder="(21)99999-9999" inputMode="numeric" pattern="[0-9]*" required minLength={14} maxLength={15} /></Field>
+          <Field label="E-mail (opcional)"><input className="input" type="text" inputMode="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="seuemail@dominio.com" /></Field>
           <Field label="Observações (opcional)"><textarea className="input textarea" value={notes} onChange={(e) => setNotes(e.target.value)} /></Field>
         </div>
         <div className="modal-footer"><div className="modal-actions"><Button type="button" variant="ghost" onClick={onClose}>Cancelar</Button><Button type="submit" disabled={submitting}>{submitting ? "Salvando..." : <><UserPlus size={16} /> Cadastrar cliente</>}</Button></div></div>

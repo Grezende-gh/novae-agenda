@@ -20,7 +20,7 @@ export function AddEmployeeModal({ onClose, onSave }: { onClose: () => void; onS
           <div className="modal-form-grid single">
             <label className="field"><span className="field-label">Nome completo</span><input className="input" value={name} onChange={(event) => setName(event.target.value)} placeholder="Ex.: Beatriz Ramos" required /></label>
             <label className="field"><span className="field-label">Cargo ou especialidade</span><input className="input" value={role} onChange={(event) => setRole(event.target.value)} placeholder="Profissional" required /></label>
-            <label className="field"><span className="field-label">Telefone</span><div className="input-with-icon"><Phone size={15} /><input className="input" value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="(11) 99999-9999" required /></div></label>
+            <label className="field"><span className="field-label">Telefone</span><div className="input-with-icon"><Phone size={15} /><input className="input" value={phone} onChange={(event) => setPhone(event.target.value.replace(/\D/g, "").slice(0, 11).replace(/^(\d{2})(\d)/, "($1)$2").replace(/^(\(\d{2}\))(\d{5})(\d)/, "$1$2-$3"))} placeholder="(21)99999-9999" required inputMode="numeric" pattern="[0-9]*" /></div></label>
           </div>
           <div className="modal-footer"><span className="form-note"><ShieldCheck size={14} /> O acesso poderá ser configurado depois</span><div className="modal-actions"><button type="button" className="button button-ghost" onClick={onClose}>Cancelar</button><button type="submit" className="button"><UserPlus size={16} /> Adicionar</button></div></div>
         </form>
