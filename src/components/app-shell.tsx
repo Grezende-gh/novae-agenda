@@ -708,6 +708,13 @@ function NewEmployeeModal({ onClose }: { onClose: () => void }) {
   const [serviceIds, setServiceIds] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
+  const formatPhone = (value: string) => {
+    const digits = value.replace(/\D/g, "").slice(0, 11);
+    if (digits.length <= 2) return digits ? `(${digits}` : "";
+    if (digits.length <= 7) return `(${digits.slice(0, 2)})${digits.slice(2)}`;
+    return `(${digits.slice(0, 2)})${digits.slice(2, 7)}-${digits.slice(7)}`;
+  };
+
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     setSubmitting(true);
@@ -728,7 +735,7 @@ function NewEmployeeModal({ onClose }: { onClose: () => void }) {
         <div className="modal-form-grid">
           <Field label="Nome completo"><input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex.: Beatriz Ramos" required minLength={2} /></Field>
           <Field label="Cargo ou especialidade"><input className="input" value={jobTitle} onChange={(e) => setJobTitle(e.target.value)} /></Field>
-          <Field label="Telefone"><input className="input" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="(11) 99999-9999" /></Field>
+          <Field label="Telefone"><input className="input" value={phone} onChange={(e) => setPhone(formatPhone(e.target.value))} placeholder="(21)99999-9999" inputMode="numeric" maxLength={15} /></Field>
           <Field label="Serviços que realiza">
             <div className="service-multi-select">
               {services.map((service) => (
