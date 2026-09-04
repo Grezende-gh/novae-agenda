@@ -308,6 +308,44 @@ kbd { display: flex; align-items: center; gap: 2px; border: 1px solid var(--bord
 .auth-card--admin .auth-submit:hover { background: #6d28d9; }
 .auth-card--admin .auth-tabs button.active { color: #7c3aed; }
 
+/* Password Recovery (Estilo Google) */
+.auth-view-animated { animation: authFadeIn 0.22s ease-out; display: grid; gap: 16px; }
+@keyframes authFadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.auth-recovery-header { text-align: center; display: flex; flex-direction: column; align-items: center; }
+.auth-recovery-badge { display: inline-flex; align-items: center; justify-content: center; gap: 6px; margin: 0 auto 12px; padding: 5px 14px; border-radius: 99px; background: var(--primary-soft); color: var(--primary); font-size: 11px; font-weight: 700; letter-spacing: .3px; }
+.auth-recovery-badge.admin { background: #f5f3ff; color: #7c3aed; }
+.auth-recovery-header h1 { text-align: center; margin: 0; font: 600 23px/1.2 "Plus Jakarta Sans", sans-serif; letter-spacing: -0.6px; color: var(--text-primary); }
+.auth-recovery-header .auth-subtitle { text-align: center; margin: 8px auto 0; max-width: 320px; color: var(--text-secondary); font-size: 12.5px; line-height: 1.5; }
+
+.auth-info-banner { display: flex; align-items: flex-start; gap: 11px; padding: 13px 15px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-secondary); color: var(--text-secondary); font-size: 11px; line-height: 1.45; text-align: left; }
+.auth-info-banner svg { color: var(--primary); flex-shrink: 0; margin-top: 2px; }
+.auth-info-banner strong { color: var(--text-primary); display: block; margin-bottom: 2px; font-size: 11.5px; font-weight: 600; }
+
+.auth-success-banner { margin-bottom: 15px; padding: 10px 12px; border: 1px solid #b6ddcd; border-radius: 8px; background: var(--success-soft); color: var(--success); font-size: 11px; display: flex; align-items: center; gap: 8px; }
+.auth-success-banner svg { flex-shrink: 0; }
+.auth-success-card { display: grid; justify-items: center; text-align: center; gap: 12px; padding: 8px 0; }
+.auth-success-icon { width: 54px; height: 54px; border-radius: 50%; background: var(--success-soft); color: var(--success); display: grid; place-items: center; margin-bottom: 4px; }
+.auth-email-pill { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border: 1px solid var(--border-strong); border-radius: 99px; background: var(--surface-secondary); color: var(--text-primary); font-weight: 600; font-size: 12px; max-width: 100%; word-break: break-all; }
+.auth-email-pill svg { color: var(--primary); }
+
+.auth-actions-split { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 6px; width: 100%; }
+.auth-actions-split .auth-submit,
+.auth-actions-split .auth-dark-btn { flex: 1; height: 42px; margin: 0; }
+
+.auth-dark-btn { height: 42px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 0 14px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-secondary); color: var(--text-primary); font-size: 12.5px; font-weight: 600; cursor: pointer; transition: all .15s ease; white-space: nowrap; }
+.auth-dark-btn:hover { background: var(--surface-tertiary); border-color: var(--border-strong); color: var(--text-primary); }
+:root[data-theme="dark"] .auth-dark-btn { background: #13221f; border-color: #273e3a; color: var(--text-primary); }
+:root[data-theme="dark"] .auth-dark-btn:hover { background: #1c312d; border-color: var(--border-strong); }
+
+.auth-secondary-btn { height: 42px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 0 16px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text-secondary); font-size: 12px; font-weight: 600; transition: all .15s; }
+.auth-secondary-btn:hover { border-color: var(--border-strong); background: var(--surface-secondary); color: var(--text-primary); }
+.auth-resend-row { display: flex; align-items: center; justify-content: space-between; padding-top: 8px; border-top: 1px solid var(--border); font-size: 11px; color: var(--text-muted); }
+
+
+
 
 .onboarding-card { width: min(680px, 100%); padding: 40px; border: 1px solid var(--border); border-radius: 16px; background: var(--surface); box-shadow: var(--shadow-sm); max-height: calc(100vh - 150px); overflow-y: auto; }
 .onboarding-intro { margin-bottom: 28px; }
